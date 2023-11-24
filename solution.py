@@ -91,22 +91,7 @@ class SVM:
             yield iterable1[ndx: index2], iterable2[ndx: index2]
 
     def infer(self, x):
-        n = len(x)
-        preds = []
-        for i in range(n):
-            scores = []
-            for j in range(self.m):
-                score = np.dot(np.transpose(self.w[:, j]), np.transpose(x[i]))
-                scores.append(score)
-            #print(scores)
-            index_max = np.argmax(scores)
-            scores[index_max] = 1
-            for j in range(self.m):
-                if j != index_max:
-                    scores[j] = -1
-            preds.append(scores)
-        #print(preds[15:50])
-        return np.array(preds)
+        pass
 
     def compute_accuracy(self, y_inferred, y):
         """
