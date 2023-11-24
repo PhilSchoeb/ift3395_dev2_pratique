@@ -91,24 +91,22 @@ class SVM:
             yield iterable1[ndx: index2], iterable2[ndx: index2]
 
     def infer(self, x):
-        """
-        x : numpy array of shape (num_examples_to_infer, num_features)
-        returns : numpy array of shape (num_examples_to_infer, num_classes)
-        """
-        n, _ = x.shape
-        _, m = self.w.shape
-
-        y_inferred = np.zeros((n, m))
-
-        for i in range(n):  
-            scores = np.dot(x[i, :], self.w)
-            predicted_class = np.argmax(scores)
-            y_inferred[i, predicted_class] = 1
-
-            # -1 for all other classes
-            y_inferred[i, np.arange(m) != predicted_class] = -1
-
-        return y_inferred
+        n = len(x)
+        preds = []
+        for i in range(n):
+            scores = []
+            for j in range(self.m):
+                score = np.dot(np.transpose(self.w[:, j]), np.transpose(x[i]))
+                scores.append(score)
+            #print(scores)
+            index_max = np.argmax(scores)
+            scores[index_max] = 1
+            for j in range(self.m):
+                if j != index_max:
+                    scores[j] = -1
+            preds.append(scores)
+        #print(preds[15:50])
+        return np.array(preds)
 
     def compute_accuracy(self, y_inferred, y):
         """
@@ -116,7 +114,11 @@ class SVM:
         y : numpy array of shape (num_examples, num_classes)
         returns : float
         """
-        pass
+        vraiClasses= np.sum(np.argmax(y_inferred, axis=1) == np.argmax(y, axis=1))
+        total_examples = len(y)
+        accuracy = vraiClasses / total_examples
+
+        return accuracy
 
     def fit(self, x_train, y_train, x_test, y_test):
         """
