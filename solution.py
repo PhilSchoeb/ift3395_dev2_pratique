@@ -1,6 +1,8 @@
+
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
+from sklearn import svm
 
 
 class SVM:
@@ -12,28 +14,70 @@ class SVM:
         self.verbose = verbose
 
     def make_one_versus_all_labels(self, y, m):
-        """
-        y : numpy array of shape (n,)
-        m : int (num_classes)
-        returns : numpy array of shape (n, m)
-        """
-        pass
+        
+        resultat = np.zeros((len(y), m))
+
+        for i in range(len(y)):
+            resultat[i, y[i]] = 1
+            resultat[i, np.arange(m) != y[i]] = -1
+
+        return resultat
 
     def compute_loss(self, x, y):
-        """
-        x : numpy array of shape (minibatch size, num_features)
-        y : numpy array of shape (minibatch size, num_classes)
-        returns : float
-        """
-        pass
+        num_examples = len(x)
+        loss = 0.0
+        w = np.zeros((len(x[0]),len(y[0])))
+
+        for i in range(num_examples):
+            for j in range(len(y[0])):
+                indicator = 1 if y[i, j] == j else -1
+                hinge_loss = max(0, 2 - np.dot(w[:,j], x[i])*indicator) ** 2
+                
+                loss += hinge_loss
+
+
+        termeRegu=0
+        for i in range(len(y[0])):
+            termeRegu+=np.dot(w[:,i],w[:,i])
+
+
+        return (loss / num_examples)+(self.C/2)*termeRegu
+
+    def indicator(self, label, y):
+        if label == np.argmax(y):
+            return 1
+        else:
+            return -1
+        
+
+    def f_minus(self, label, x, d):
+        margin = 2. - np.dot(self.w[:, label], x)
+        return max(0, margin) * (-x[d])
+
+    def f_plus(self, label, x, d):
+        margin = 2. + np.dot(self.w[:, label], x)
+        return max(0, margin) * x[d]
 
     def compute_gradient(self, x, y):
-        """
-        x : numpy array of shape (minibatch size, num_features)
-        y : numpy array of shape (minibatch size, num_classes)
-        returns : numpy array of shape (num_features, num_classes)
-        """
-        pass
+        n, d = x.shape
+        _, m = y.shape
+
+        gradient = np.zeros((d, m))
+
+        for i in range(d):  # Attribute
+            for j in range(m):  # Label
+                sum_term = 0
+                for k in range(n):  # Point
+                    indicator = 1 if j == np.argmax(y[k]) else -1
+                    sum_term += self.f_minus(j, x[k], i) if indicator == 1 else self.f_plus(j, x[k], i)
+
+                grad = (2 / n) * sum_term + self.C * self.w[i, j]
+                gradient[i, j] = grad
+
+        return gradient
+
+
+
 
     # Batcher function
     def minibatch(self, iterable1, iterable2, size=1):
@@ -51,7 +95,20 @@ class SVM:
         x : numpy array of shape (num_examples_to_infer, num_features)
         returns : numpy array of shape (num_examples_to_infer, num_classes)
         """
-        pass
+        n, _ = x.shape
+        _, m = self.w.shape
+
+        y_inferred = np.zeros((n, m))
+
+        for i in range(n):  
+            scores = np.dot(x[i, :], self.w)
+            predicted_class = np.argmax(scores)
+            y_inferred[i, predicted_class] = 1
+
+            # -1 for all other classes
+            y_inferred[i, np.arange(m) != predicted_class] = -1
+
+        return y_inferred
 
     def compute_accuracy(self, y_inferred, y):
         """
@@ -157,10 +214,10 @@ if __name__ == "__main__":
     train_losses, train_accs, test_losses, test_accs = svm.fit(x_train, y_train, x_test, y_test)
 
     # # to infer after training, do the following:
-    # y_inferred = svm.infer(x_test)
+    #y_inferred = svm.infer(x_test)
 
     ## to compute the gradient or loss before training, do the following:
-    # y_train_ova = svm.make_one_versus_all_labels(y_train, 3) # one-versus-all labels
-    # svm.w = np.zeros([x_train.shape[1], 3])
-    # grad = svm.compute_gradient(x_train, y_train_ova)
-    # loss = svm.compute_loss(x_train, y_train_ova)
+    #y_train_ova = svm.make_one_versus_all_labels(y_train, 3) # one-versus-all labels
+    #svm.w = np.zeros([x_train.shape[1], 3])
+    #grad = svm.compute_gradient(x_train, y_train_ova)
+    #loss = svm.compute_loss(x_train, y_train_ova)
