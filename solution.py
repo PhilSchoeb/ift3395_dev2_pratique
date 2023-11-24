@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn import svm
+import matplotlib.pyplot as plt
 
 
 class SVM:
@@ -26,8 +27,9 @@ class SVM:
     def compute_loss(self, x, y):
         num_examples = len(x)
         loss = 0.0
-        w = np.zeros((len(x[0]),len(y[0])))
-
+        #w = np.zeros((len(x[0]),len(y[0])))
+        w=self.w
+        
         for i in range(num_examples):
             for j in range(len(y[0])):
                 indicator = 1 if y[i, j] == j else -1
@@ -91,7 +93,22 @@ class SVM:
             yield iterable1[ndx: index2], iterable2[ndx: index2]
 
     def infer(self, x):
-        pass
+        n, _ = x.shape
+        _, m = self.w.shape
+
+        y_inferred = np.zeros((n, 6)) - 1  # start all at -1
+
+        for i in range(n):
+            scoresClasses = np.zeros(m)  # Initialize outside the loop
+            for j in range(m):
+                scores = np.dot(self.w[:, j], x[i])
+                scoresClasses[j] = scores
+
+            predicted_class = np.argmax(scoresClasses)
+            y_inferred[i, predicted_class] = 1
+            #print(y_inferred[i,:])
+
+        return y_inferred
 
     def compute_accuracy(self, y_inferred, y):
         """
@@ -197,14 +214,19 @@ if __name__ == "__main__":
     x_train, y_train, x_test, y_test = load_data()
 
     print("Fitting the model...")
-    svm = SVM(eta=0.0001, C=2, niter=200, batch_size=100, verbose=False)
+    svm = SVM(eta=0.0001, C=1, niter=3, batch_size=100, verbose=False)
     train_losses, train_accs, test_losses, test_accs = svm.fit(x_train, y_train, x_test, y_test)
 
     # # to infer after training, do the following:
-    #y_inferred = svm.infer(x_test)
+    y_inferred = svm.infer(x_test)
 
     ## to compute the gradient or loss before training, do the following:
-    #y_train_ova = svm.make_one_versus_all_labels(y_train, 3) # one-versus-all labels
-    #svm.w = np.zeros([x_train.shape[1], 3])
-    #grad = svm.compute_gradient(x_train, y_train_ova)
-    #loss = svm.compute_loss(x_train, y_train_ova)
+    y_train_ova = svm.make_one_versus_all_labels(y_train, 3) # one-versus-all labels
+    svm.w = np.zeros([x_train.shape[1], 3])
+    grad = svm.compute_gradient(x_train, y_train_ova)
+    loss = svm.compute_loss(x_train, y_train_ova)
+
+    print(train_losses)
+    print(train_accs)
+    print(test_losses)
+    print(test_accs)
