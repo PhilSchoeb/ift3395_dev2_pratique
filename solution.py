@@ -27,8 +27,8 @@ class SVM:
     def compute_loss(self, x, y):
         num_examples = len(x)
         loss = 0.0
-        #w = np.zeros((len(x[0]),len(y[0])))
-        w=self.w
+        w = np.zeros((len(x[0]),len(y[0])))
+        #w=self.w
         
         for i in range(num_examples):
             for j in range(len(y[0])):
